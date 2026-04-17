@@ -66,14 +66,7 @@ smart-travel/
 3. **Configure environment variables**:
    Create a `.env` file in the `smart-traffic-backend/` directory:
    ```env
-   PORT=5000
-   MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/smarttraffic
-   LOCAL_MONGO_URI=mongodb://localhost:27017/smarttraffic
-   JWT_SECRET=your_jwt_secret_key
-   ADMIN_KEY=your_admin_key
-   ```
-
-## Running the Application
+   ## Running the Application
 
 ### Development Mode
 ```bash
@@ -179,7 +172,6 @@ ISC
 
 ## Author
 
-Your Name/Organization
 
 ---
 
