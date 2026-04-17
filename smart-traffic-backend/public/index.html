@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SMART-TRAVEL</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    /* --- Google Font Import --- */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+    /* --- NEW ELEGANT COLOR PALETTE --- */
+    :root {
+        /* Light Theme */
+        --primary-color-start: #2563eb;   /* Richer Blue */
+        --primary-color-end: #3b82f6;     /* Lighter Blue */
+        --background-color-main: rgba(241, 245, 249, 0.6); /* Slightly transparent light slate gray for glass effect */
+        --surface-color: rgba(255, 255, 255, 0.65);         /* White for cards, slightly more opaque */
+        --text-color-primary: #0f172a;    /* Dark Slate for high contrast */
+        --text-color-secondary: #475569; /* Slate Gray for secondary text */
+        --border-color: rgba(203, 213, 225, 0.8);      /* Light gray border */
+        --success-color: #16a34a;      /* Stronger Green */
+        --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        --border-radius: 16px;
+    }
+
+    body.dark-theme {
+        /* Dark Theme */
+        --primary-color-start: #38bdf8;   /* Bright Sky Blue */
+        --primary-color-end: #60a5fa;     /* Lighter Sky Blue */
+        --background-color-main: rgba(15, 23, 42, 0.6);   /* Dark Slate with transparency */
+        --surface-color: rgba(30, 41, 59, 0.65);           /* Darker card color with transparency */
+        --text-color-primary: #f8fafc;    /* Off-white for easy reading */
+        --text-color-secondary: #94a3b8; /* Lighter Slate for secondary text */
+        --border-color: rgba(51, 65, 85, 0.8);        /* Darker border */
+        --success-color: #22c55e;      /* Bright Green */
+    }
+
+    /* --- General Body & Background Image --- */
+    body, html {
+        margin: 0;
+        height: 100%;
+        font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: var(--text-color-primary);
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        transition: background 0.5s ease, color 0.3s ease;
+        
+        /* --- BACKGROUND IMAGE AND OVERLAY --- */
+        background-image: linear-gradient(rgba(241, 245, 249, 0.8), rgba(241, 245, 249, 0.8)), url('https://images.unsplash.com/photo-1570121339139-3172a06f402f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80&blur=8');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }
+
+    body.dark-theme {
+        /* Dark theme overlay for the background image */
+        background-image: linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.85)), url('https://images.unsplash.com/photo-1570121339139-3172a06f402f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80&blur=8');
+    }
+
+    .container {
+        display: flex;
+        flex-grow: 1;
+        flex-direction: row;
+        gap: 1.5rem;
+        padding: 1.5rem;
+    }
+
+    /* --- Header --- */
+    header {
+        background: var(--surface-color);
+        color: var(--text-color-primary);
+        padding: 1rem 2.5rem;
+        font-weight: 600;
+        font-size: 1.2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: var(--shadow);
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px); /* Glass effect */
+        -webkit-backdrop-filter: blur(10px); /* For Safari */
+    }
+    
+    .header-controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    #themeToggleBtn {
+        background: var(--background-color-main);
+        border: 1px solid var(--border-color);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        font-size: 1.2rem;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: var(--text-color-primary);
+    }
+    #themeToggleBtn:hover {
+        transform: scale(1.1) rotate(15deg);
+    }
+
+    /* --- Sidebar Navigation --- */
+    nav.sidebar {
+        width: 240px;
+        background: var(--surface-color);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        padding: 1.5rem 1rem;
+        gap: 0.5rem;
+        flex-shrink: 0;
+        transition: all 0.3s ease;
+        border: 1px solid var(--border-color);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    nav.sidebar button {
+        background: none;
+        color: var(--text-color-secondary);
+        font-size: 0.95rem;
+        font-weight: 600;
+        padding: 12px 16px;
+        text-align: left;
+        border-radius: 8px;
+        border-left: 4px solid transparent;
+        transition: background 0.2s ease, color 0.2s ease, border-left-color 0.2s ease, transform 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    nav.sidebar button.active, nav.sidebar button:hover {
+        background: linear-gradient(90deg, var(--primary-color-start), var(--primary-color-end));
+        color: white;
+        font-weight: 600;
+        border-left-color: var(--primary-color-end);
+        transform: translateX(5px);
+    }
+
+    /* --- Main Content Area --- */
+    main.content-area {
+        flex-grow: 1;
+        background: var(--surface-color);
+        padding: 2.5rem;
+        overflow-y: auto;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        transition: all 0.3s ease;
+        border: 1px solid var(--border-color);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    .content-area > section {
+        display: none;
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .content-area > section.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2 {
+        font-weight: 700;
+        font-size: 1.75rem;
+        margin-top: 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--primary-color-start);
+        color: var(--text-color-primary);
+    }
+
+    /* --- Forms: Inputs & Labels --- */
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--text-color-secondary);
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 12px 15px;
+        margin-bottom: 1.25rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 1rem;
+        font-family: 'Poppins', sans-serif;
+        box-sizing: border-box;
+        background-color: var(--background-color-main);
+        color: var(--text-color-primary);
+        transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Override background for time inputs to make them more visible */
+    input[type="time"],
+    input[type="date"],
+    input[type="datetime-local"] {
+        background-color: rgba(255, 255, 255, 0.9) !important;
+        color: #000 !important;
+    }
+
+    body.dark-theme input[type="time"],
+    body.dark-theme input[type="date"],
+    body.dark-theme input[type="datetime-local"] {
+        background-color: rgba(50, 50, 50, 0.9) !important;
+        color: #fff !important;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: var(--primary-color-start);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color-start) 20%, transparent);
+    }
+
+    /* --- Buttons --- */
+    button {
+        cursor: pointer;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        font-size: 1rem;
+        padding: 12px 24px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-primary {
+        background: linear-gradient(90deg, var(--primary-color-start), var(--primary-color-end));
+        color: white;
+        box-shadow: 0 4px 15px -5px color-mix(in srgb, var(--primary-color-start) 60%, transparent);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 7px 20px -5px color-mix(in srgb, var(--primary-color-start) 80%, transparent);
+    }
+
+    .btn-secondary {
+        background-color: transparent;
+        color: var(--primary-color-start);
+        border: 2px solid var(--primary-color-start);
+    }
+
+    .btn-secondary:hover {
+        background-color: var(--primary-color-start);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .home-actions {
+        margin-top: 2rem;
+        display: flex;
+        gap: 1rem;
+    }
+
+    /* --- Results Lists --- */
+    .results-list {
+        max-height: 250px;
+        overflow-y: auto;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        margin-top: 1.5rem;
+    }
+
+    .results-list > div {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.2s ease;
+    }
+
+    .results-list > div:hover {
+        background-color: var(--background-color-main);
+    }
+
+    .results-list > div:last-child {
+        border-bottom: none;
+    }
+
+    .results-list button {
+        background: var(--success-color);
+        color: white;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+
+    body.dark-theme .results-list button:hover {
+        background: #16a34a;
+    }
+    body:not(.dark-theme) .results-list button:hover {
+        background: #15803d;
+    }
+
+    /* --- Misc & Responsive --- */
+    .small {
+        font-size: 0.85rem;
+        color: var(--text-color-secondary);
+    }
+
+    #map {
+        height: 300px;
+        margin-top: 1.5rem;
+        border-radius: var(--border-radius);
+        border: 1px solid var(--border-color);
+    }
+
+    .auth-section, .logged-in-section {
+        display: none;
+    }
+
+    @media (max-width: 900px) {
+        .container {
+            flex-direction: column;
+            padding: 1rem;
+            gap: 1rem;
+        }
+        nav.sidebar {
+            width: 100%;
+            flex-direction: row;
+            overflow-x: auto;
+            padding: 0.5rem;
+            border-radius: var(--border-radius);
+        }
+        nav.sidebar button {
+            flex: 1 0 auto;
+            text-align: center;
+            border-left: none;
+            border-bottom: 3px solid transparent;
+            padding: 10px 8px;
+        }
+        nav.sidebar button.active, nav.sidebar button:hover {
+            border-left: none;
+            border-bottom-color: var(--primary-color-start);
+            transform: none;
+            background: var(--background-color-main);
+            color: var(--primary-color-start);
+        }
+        main.content-area { padding: 1.5rem; }
+        .home-actions { flex-direction: column; }
+        h2 { font-size: 1.5rem; }
+        #map { height: 200px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div id="userLabel">SMART-ODRA</div>
+    <div class="header-controls">
+        <button id="themeToggleBtn">🌙</button>
+        <button id="logoutBtn" class="btn-primary" style="display:none;">Logout</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <nav class="sidebar">
+      <button data-tab="home" class="auth-section">Home</button>
+      <button data-tab="login" class="auth-section">Login</button>
+      <button data-tab="signup" class="auth-section">Signup</button>
+      
+      <button data-tab="traffic" class="logged-in-section">Traffic Prediction</button>
+      <button data-tab="createRide" class="logged-in-section">Create Ride</button>
+      <button data-tab="verifyUser" class="logged-in-section">Verify User</button>
+      <button data-tab="findRide" class="logged-in-section">Find Ride</button>
+      <button data-tab="myRides" class="logged-in-section">My Rides & Wallet</button>
+      <button data-tab="reportIssue" class="logged-in-section">Report an Issue</button>
+      <button data-tab="adminDashboard" class="logged-in-section">Admin Panel</button>
+    </nav>
+    <main class="content-area">
+
+      <section id="home" class="active">
+        <h2>Welcome to SMART-ODRA 🚗</h2>
+        <P>Your tool for a Faster Travel in the Unexplored Beauty of Odisha</P>
+        <p>Your one-stop solution for intelligent traffic management, carpooling, and issue reporting in Odisha.</p>
+        <p>Saving your most precious possession: TIME! ⏳.</p>
+        <p>Log in to access your dashboard or sign up to get started and receive a <strong>50km</strong> wallet bonus!</p>
+        <div class="home-actions">
+          <button class="btn-primary" onclick="showTab('login')">Login to Your Account</button>
+          <button class="btn-secondary" onclick="showTab('signup')">Create a New Account</button>
+        </div>
+      </section>
+
+      <section id="signup">
+        <h2>Signup</h2>
+        <p>Join to start sharing rides. You'll get <strong>50km</strong> of wallet credit as a bonus!</p>
+        
+        <!-- Step 1: Signup Form -->
+        <div id="signupStep1">
+          <form id="signupForm">
+            <label for="suName">Full Name</label>
+            <input id="suName" required>
+
+            <label for="suEmail">Email</label>
+            <input id="suEmail" type="email" required>
+
+            <label for="suPassword">Password</label>
+            <input id="suPassword" type="password" required>
+
+            <button class="btn-primary" type="submit">Send OTP to Email</button>
+          </form>
+        </div>
+
+        <!-- Step 2: OTP Verification Form -->
+        <div id="signupStep2" style="display: none;">
+          <form id="otpForm">
+            <p>We've sent a verification code to <strong id="otpEmail"></strong></p>
+            
+            <label for="otpCode">Enter Verification Code</label>
+            <input id="otpCode" type="text" placeholder="Enter 6-digit OTP" maxlength="6" pattern="[0-9]{6}" required>
+            
+            <button class="btn-primary" type="submit">Verify and Complete Signup</button>
+            
+            <p style="text-align: center; margin-top: 15px;">
+              <span class="small">Didn't receive the code? </span>
+              <button type="button" class="btn-secondary" style="padding: 8px 16px; font-size: 0.9rem;" onclick="resendOTP()">Resend OTP</button>
+            </p>
+          </form>
+          <div id="otpResult" style="margin-top: 15px;"></div>
+        </div>
+      </section>
+
+      <section id="login">
+        <h2>Login</h2>
+        <form id="loginForm">
+          <label for="liEmail">Email</label>
+          <input id="liEmail" type="email" required>
+
+          <label for="liPassword">Password</label>
+          <input id="liPassword" type="password" required>
+
+          <button class="btn-primary" type="submit">Login</button>
+        </form>
+      </section>
+
+      <section id="traffic">
+        <h2>Traffic Prediction - Odisha</h2>
+        <form id="trafficForm">
+          <label for="tpStart">Start Location</label>
+          <select id="tpStart" required>
+            <option value="" selected disabled>Select Start</option>
+            <option>Bhubaneswar</option>
+            <option>Cuttack</option>
+            <option>Rourkela</option>
+            <option>Puri</option>
+          </select>
+
+          <label for="tpDest">Destination</label>
+          <select id="tpDest" required>
+            <option value="" selected disabled>Select Destination</option>
+            <option>Infocity</option>
+            <option>Forum Mall</option>
+            <option>Elco Market</option>
+            <option>Puri Beach</option>
+          </select>
+
+          <label for="tpDay">Day of Week</label>
+          <select id="tpDay">
+            <option value="1">Monday</option>
+            <option value="2">Tuesday</option>
+            <option value="3">Wednesday</option>
+            <option value="4">Thursday</option>
+            <option value="5">Friday</option>
+            <option value="6">Saturday</option>
+            <option value="0">Sunday</option>
+          </select>
+
+          <label for="tpTime">Time</label>
+          <input type="time" id="tpTime" required>
+
+          <button class="btn-primary" type="submit">Get Prediction</button>
+        </form>
+
+        <div id="tpResult" style="margin-top: 12px;"></div>
+        <div id="map"></div>
+      </section>
+
+      <section id="createRide">
+        <h2>Create Your Ride</h2>
+        <form id="createRideForm">
+          <label for="crStart">Start</label>
+          <input id="crStart" required placeholder="e.g., Bhubaneswar Railway Station">
+          <label for="crDest">Destination</label>
+          <input id="crDest" required placeholder="e.g., Infocity Square">
+          <label for="crTime">Departure Time</label>
+          <input type="time" id="crTime" required>
+          <label for="crSeats">Available Seats</label>
+          <input type="number" id="crSeats" value="1" min="1" max="4" required>
+          <button class="btn-primary" type="submit">Create Ride</button>
+        </form>
+      </section>
+      <section id="verifyUser">
+        <h2>Verify Your Identity</h2>
+        <p>Verify your identity before starting rides. This helps ensure safety for all users.</p>
+        
+        <div style="margin-bottom: 20px;">
+          <label for="verifyName">Full Name (As on Identity Proof)</label>
+          <input id="verifyName" type="text" placeholder="Enter your full name" required>
+          
+          <label for="verifyPhone">Mobile Number</label>
+          <input id="verifyPhone" type="tel" placeholder="Enter 10-digit mobile number" pattern="[0-9]{10}" maxlength="10" required>
+          
+          <label for="idProofType">Select Identity Proof Type</label>
+          <select id="idProofType" required onchange="updateIdProofFields()">
+            <option value="" selected disabled>Choose an option</option>
+            <option value="aadhar">Aadhar Card</option>
+            <option value="pan">PAN Card</option>
+            <option value="driving_license">Driving License</option>
+          </select>
+        </div>
+        
+        <!-- Aadhar Card Section -->
+        <div id="aadharSection" style="display: none; margin-bottom: 20px;">
+          <label for="aadharNumber">Aadhar Number (12 digits)</label>
+          <input id="aadharNumber" type="text" placeholder="Enter 12-digit Aadhar number" pattern="[0-9]{12}" maxlength="12" inputmode="numeric">
+          
+          <label for="aadharFile">Upload Aadhar Card *</label>
+          <input id="aadharFile" type="file" accept=".jpg,.jpeg,.png,.pdf" required>
+          <span class="small">Accepted formats: JPG, JPEG, PNG, PDF</span>
+        </div>
+        
+        <!-- PAN Card Section -->
+        <div id="panSection" style="display: none; margin-bottom: 20px;">
+          <label for="panNumber">PAN Number (Format: AAAAA0000A)</label>
+          <input id="panNumber" type="text" placeholder="Enter PAN number" pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}" maxlength="10" style="text-transform: uppercase;">
+          
+          <label for="panFile">Upload PAN Card *</label>
+          <input id="panFile" type="file" accept=".jpg,.jpeg,.png,.pdf" required>
+          <span class="small">Accepted formats: JPG, JPEG, PNG, PDF</span>
+        </div>
+        
+        <!-- Driving License Section -->
+        <div id="dlSection" style="display: none; margin-bottom: 20px;">
+          <label for="dlNumber">Driving License Number</label>
+          <input id="dlNumber" type="text" placeholder="Enter Driving License number" pattern="[A-Z0-9]{1,20}" maxlength="20" style="text-transform: uppercase;">
+          
+          <label for="dlFile">Upload Driving License *</label>
+          <input id="dlFile" type="file" accept=".jpg,.jpeg,.png,.pdf" required>
+          <span class="small">Accepted formats: JPG, JPEG, PNG, PDF</span>
+        </div>
+        
+        <button class="btn-primary" onclick="submitVerification()">Submit Verification</button>
+        <div id="verifyResult" style="margin-top: 15px;"></div>
+      </section>
+      <section id="findRide">
+        <h2>Find a Ride</h2>
+        <form id="findRideForm">
+          <label for="frStart">From</label>
+          <input id="frStart" placeholder="Leave blank to see all">
+          <label for="frDest">To</label>
+          <input id="frDest" placeholder="Leave blank to see all">
+          <button class="btn-primary" type="submit">Search</button>
+        </form>
+        <div id="rideResults" class="results-list"></div>
+      </section>
+      <section id="myRides">
+        <h2>My Rides & Wallet</h2>
+        <div id="walletInfo" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 15px;"></div>
+        <div id="myRidesList" class="results-list"></div>
+      </section>
+      <section id="reportIssue">
+        <h2>Report an Issue</h2>
+        <form id="reportForm">
+          <label for="riDesc">Issue Description (e.g., Pothole, Broken Traffic Light)</label>
+          <input id="riDesc" required>
+          <label for="riLoc">Location (e.g., Near KIIT Square)</label>
+          <input id="riLoc" required>
+          <label for="riPhoto">Upload Photo (optional)</label>
+          <input id="riPhoto" type="file" accept="image/*">
+          <button class="btn-primary" type="submit">Submit Report</button>
+        </form>
+      </section>
+      <section id="adminDashboard">
+        <h2>Admin Dashboard</h2>
+        <label for="adminKey">Admin Key:</label>
+        <input id="adminKey" type="password" placeholder="Enter admin key">
+        <button id="loadAdminBtn" class="btn-primary" style="margin-top: 10px;">Load Reports</button>
+        <div id="adminReportsList" class="results-list" style="margin-top: 12px;"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const API = 'http://localhost:5000';
+    let token = localStorage.getItem('st_token');
+    let currentUser = null;
+    let userVerified = false;
+
+    const body = document.body;
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const tabs = document.querySelectorAll('nav.sidebar button');
+    const contents = document.querySelectorAll('.content-area > section');
+    const userLabel = document.getElementById('userLabel');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const walletInfo = document.getElementById('walletInfo');
+    
+    // --- THEME TOGGLE FUNCTIONALITY (NEW) ---
+    const applyTheme = (theme) => {
+        if (theme === 'dark') {
+            body.classList.add('dark-theme');
+            themeToggleBtn.textContent = '☀️';
+        } else {
+            body.classList.remove('dark-theme');
+            themeToggleBtn.textContent = '🌙';
+        }
+    };
+
+    themeToggleBtn.addEventListener('click', () => {
+        const currentTheme = body.classList.contains('dark-theme') ? 'dark' : 'light';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('theme', newTheme);
+        applyTheme(newTheme);
+    });
+
+    // --- Core App Logic ---
+    function updateAuthState(isLoggedIn) {
+        document.querySelectorAll('.auth-section').forEach(el => el.style.display = isLoggedIn ? 'none' : 'block');
+        document.querySelectorAll('.logged-in-section').forEach(el => el.style.display = isLoggedIn ? 'block' : 'none');
+        logoutBtn.style.display = isLoggedIn ? 'block' : 'none';
+
+        if (isLoggedIn) {
+            fetchUser();
+            showTab('traffic');
+        } else {
+            currentUser = null;
+            userLabel.textContent = 'SMART-ODRA';
+            showTab('home');
+        }
+    }
+
+    function showTab(id) {
+        contents.forEach(c => c.classList.toggle('active', c.id === id));
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+        if (id === 'traffic' && token) initMap();
+        if (id === 'myRides' && token) loadMyRides();
+    }
+    
+    // --- INITIALIZATION ---
+    window.onload = () => {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      applyTheme(savedTheme);
+      updateAuthState(!!token);
+    };
+
+    // --- EVENT LISTENERS ---
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabId = tab.dataset.tab;
+        const rideRelatedTabs = ['createRide', 'findRide', 'myRides'];
+        
+        if (rideRelatedTabs.includes(tabId) && !userVerified) {
+          alert('❌ You must verify your identity first before accessing rides. Please go to "Verify User" section.');
+          showTab('verifyUser');
+          return;
+        }
+        showTab(tabId);
+      });
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('st_token');
+      token = null;
+      updateAuthState(false);
+      alert('You have been logged out.');
+    });
+
+    // --- API Functions (ALL ORIGINAL FUNCTIONS RESTORED) ---
+    async function fetchUser() {
+      if (!token) return;
+      try {
+        const res = await fetch(`${API}/api/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) throw new Error('Session expired');
+        const data = await res.json();
+        currentUser = data.user;
+        userVerified = data.user.isVerified || false;
+        userLabel.textContent = `Welcome, ${currentUser.fullName}`;
+        walletInfo.textContent = `Wallet Credit: ${currentUser.walletKm.toFixed(2)} km`;
+        
+        if (userVerified) {
+          userLabel.textContent += ' ✅ (Verified)';
+        }
+      } catch (err) {
+        alert(err.message);
+        logoutBtn.click();
+      }
+    }
+
+    // Store signup data for OTP verification
+    let signupData = {};
+
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fullName = document.getElementById('suName').value.trim();
+      const email = document.getElementById('suEmail').value.trim();
+      const password = document.getElementById('suPassword').value;
+
+      if (!fullName || !email || !password) {
+        alert('Please fill all required fields');
+        return;
+      }
+
+      try {
+        const fd = new FormData();
+        fd.append('fullName', fullName);
+        fd.append('email', email);
+        fd.append('password', password);
+
+        const res = await fetch(`${API}/api/signup`, { method: 'POST', body: fd });
+        const data = await res.json();
+        
+        if (!res.ok) throw new Error(data.error);
+
+        // Store signup data for OTP verification
+        signupData = { fullName, email, password };
+
+        // Show OTP verification step
+        document.getElementById('signupStep1').style.display = 'none';
+        document.getElementById('signupStep2').style.display = 'block';
+        document.getElementById('otpEmail').textContent = email;
+        document.getElementById('otpCode').value = '';
+        
+        alert('OTP sent to your email! Please check and enter the verification code.');
+      } catch (err) {
+        alert(`Signup Error: ${err.message}`);
+      }
+    });
+
+    // OTP Verification
+    document.getElementById('otpForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const otp = document.getElementById('otpCode').value.trim();
+      const resultDiv = document.getElementById('otpResult');
+
+      if (!otp || otp.length !== 6) {
+        resultDiv.innerHTML = '<p style="color: var(--primary-color-start); font-weight: 600;">❌ Please enter a valid 6-digit OTP</p>';
+        return;
+      }
+
+      try {
+        const payload = {
+          email: signupData.email,
+          otp,
+          fullName: signupData.fullName,
+          password: signupData.password
+        };
+
+        const res = await fetch(`${API}/api/verify-otp-signup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error);
+
+        token = data.token;
+        localStorage.setItem('st_token', token);
+
+        resultDiv.innerHTML = '<p style="color: var(--success-color); font-weight: 600;">✅ Email verified! Redirecting...</p>';
+
+        setTimeout(() => {
+          document.getElementById('signupStep1').style.display = 'block';
+          document.getElementById('signupStep2').style.display = 'none';
+          document.getElementById('suName').value = '';
+          document.getElementById('suEmail').value = '';
+          document.getElementById('suPassword').value = '';
+          document.getElementById('otpCode').value = '';
+          resultDiv.innerHTML = '';
+          updateAuthState(true);
+        }, 2000);
+      } catch (err) {
+        resultDiv.innerHTML = `<p style="color: var(--primary-color-start); font-weight: 600;">❌ ${err.message}</p>`;
+      }
+    });
+
+    // Resend OTP function
+    async function resendOTP() {
+      try {
+        const res = await fetch(`${API}/api/resend-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: signupData.email, fullName: signupData.fullName })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error);
+
+        alert('New OTP sent to your email!');
+      } catch (err) {
+        alert(`Resend OTP Error: ${err.message}`);
+      }
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = { email: document.getElementById('liEmail').value, password: document.getElementById('liPassword').value };
+      try {
+        const res = await fetch(`${API}/api/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        token = data.token;
+        localStorage.setItem('st_token', token);
+        alert('Login successful!');
+        updateAuthState(true);
+      } catch (err)
+      {
+        alert(`Login Error: ${err.message}`);
+      }
+    });
+    
+    document.getElementById('trafficForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = { start: document.getElementById('tpStart').value, dest: document.getElementById('tpDest').value, dayOfWeek: Number(document.getElementById('tpDay').value), time: document.getElementById('tpTime').value };
+      try {
+        const res = await fetch(`${API}/api/predict-traffic`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        document.getElementById('tpResult').innerHTML = `<strong>Prediction: ${data.prediction}</strong><p class="small">${data.reason}</p>`;
+      } catch (err) {
+        alert(`Prediction Error: ${err.message}`);
+      }
+    });
+    
+    document.getElementById('createRideForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = { start: document.getElementById('crStart').value, dest: document.getElementById('crDest').value, departTime: document.getElementById('crTime').value, seats: document.getElementById('crSeats').value };
+      try {
+        const res = await fetch(`${API}/api/rides`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        alert('Ride created successfully!');
+        e.target.reset();
+        showTab('myRides');
+      } catch (err) {
+        alert(`Create Ride Error: ${err.message}`);
+      }
+    });
+    
+    document.getElementById('findRideForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = { start: document.getElementById('frStart').value, dest: document.getElementById('frDest').value };
+      try {
+        const res = await fetch(`${API}/api/rides/search`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        const container = document.getElementById('rideResults');
+        container.innerHTML = '';
+        if (data.matched.length === 0) {
+          container.textContent = 'No active rides match your search.';
+          return;
+        }
+        data.matched.forEach(ride => {
+          const d = document.createElement('div');
+          const isMyRide = currentUser && ride.driverId && ride.driverId._id === currentUser._id;
+          d.innerHTML = `<span>${ride.start} → ${ride.dest}<br><span class="small">Driver: ${isMyRide ? 'You' : ride.driverId.fullName} | Departs: ${ride.departTime}</span></span> ${!isMyRide ? '<button>Join Ride</button>' : ''}`;
+          if (!isMyRide) { d.querySelector('button').onclick = () => joinRide(ride._id); }
+          container.appendChild(d);
+        });
+      } catch (err) {
+        alert(`Search Error: ${err.message}`);
+      }
+    });
+    
+    async function joinRide(rideId) {
+        try {
+            const res = await fetch(`${API}/api/rides/${rideId}/join`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            alert(`Successfully joined ride! ${data.distanceKm.toFixed(2)}km were deducted from your wallet.`);
+            fetchUser();
+        } catch (err) {
+            alert(`Join Ride Error: ${err.message}`);
+        }
+    }
+    
+    async function loadMyRides() {
+      try {
+        await fetchUser();
+        const res = await fetch(`${API}/api/my/rides`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const responseData = await res.json();
+        if (!res.ok) throw new Error(responseData.error || 'Failed to load');
+        
+        const ridesArray = Array.isArray(responseData) ? responseData : responseData.rides;
+
+        const container = document.getElementById('myRidesList');
+        container.innerHTML = '';
+
+        if (!ridesArray || ridesArray.length === 0) {
+          container.textContent = 'You have no past or upcoming rides.';
+          return;
+        }
+
+        ridesArray.forEach(r => {
+          const d = document.createElement('div');
+          const isMyRide = currentUser && r.driverId && r.driverId._id === currentUser._id;
+          const passengersList = r.passengers.map(p => p.fullName).join(', ') || 'None';
+          d.innerHTML = `<span>${r.start} → ${r.dest} <br><span class="small">Role: ${isMyRide ? 'Driver' : 'Passenger'} | Passengers: ${passengersList}</span></span>`;
+          container.appendChild(d);
+        });
+      } catch (err) {
+        alert(`Load Rides Error: ${err.message}`);
+      }
+    }
+
+    // --- VERIFICATION FUNCTIONS ---
+    
+    function updateIdProofFields() {
+      const proofType = document.getElementById('idProofType').value;
+      document.getElementById('aadharSection').style.display = proofType === 'aadhar' ? 'block' : 'none';
+      document.getElementById('panSection').style.display = proofType === 'pan' ? 'block' : 'none';
+      document.getElementById('dlSection').style.display = proofType === 'driving_license' ? 'block' : 'none';
+      
+      // Reset all fields when changing
+      document.getElementById('aadharNumber').value = '';
+      document.getElementById('aadharFile').value = '';
+      document.getElementById('panNumber').value = '';
+      document.getElementById('panFile').value = '';
+      document.getElementById('dlNumber').value = '';
+      document.getElementById('dlFile').value = '';
+    }
+
+    function validateAadharNumber(aadhar) {
+      // Aadhar: exactly 12 digits
+      const aadharRegex = /^\d{12}$/;
+      return aadharRegex.test(aadhar);
+    }
+
+    function validatePANNumber(pan) {
+      // PAN format: AAAAA0000A (5 letters, 4 digits, 1 letter)
+      const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+      return panRegex.test(pan.toUpperCase());
+    }
+
+    function validateDLNumber(dl) {
+      // Driving License: alphanumeric, 1-20 characters
+      const dlRegex = /^[A-Z0-9]{1,20}$/;
+      return dlRegex.test(dl.toUpperCase());
+    }
+
+    function validatePhoneNumber(phone) {
+      // Indian phone: exactly 10 digits
+      const phoneRegex = /^\d{10}$/;
+      return phoneRegex.test(phone);
+    }
+
+    function validateFileFormat(file, allowedFormats) {
+      if (!file) return false;
+      const fileExtension = file.name.split('.').pop().toLowerCase();
+      return allowedFormats.includes(fileExtension);
+    }
+
+    async function submitVerification() {
+      const name = document.getElementById('verifyName').value.trim();
+      const phone = document.getElementById('verifyPhone').value.trim();
+      const proofType = document.getElementById('idProofType').value;
+      const resultDiv = document.getElementById('verifyResult');
+      
+      resultDiv.innerHTML = '';
+      
+      // Validate name
+      if (!name || name.length < 3) {
+        resultDiv.innerHTML = '<p style="color: var(--primary-color-start); font-weight: 600;">❌ Please enter a valid name (minimum 3 characters)</p>';
+        return;
+      }
+
+      // Validate phone
+      if (!validatePhoneNumber(phone)) {
+        resultDiv.innerHTML = '<p style="color: var(--primary-color-start); font-weight: 600;">❌ Please enter a valid 10-digit mobile number</p>';
+        return;
+      }
+
+      // Validate ID proof type is selected
+      if (!proofType) {
+        resultDiv.innerHTML = '<p style="color: var(--primary-color-start); font-weight: 600;">❌ Please select an identity proof type</p>';
+        return;
+      }
+
+      // Validate and upload based on proof type
+      const fd = new FormData();
+      fd.append('name', name);
+      fd.append('phone', phone);
+      fd.append('proofType', proofType);
+
+      if (proofType === 'aadhar') {
+        const aadharNumber = document.getElementById('aadharNumber').value.trim();
+        const aadharFile = document.getElementById('aadharFile').files[0];
+
+        if (!aadharNumber) {
+          resultDiv.innerHTML = '<p style="color: var(--primary-color-start); font-weight: 600;">❌ Please enter Aadhar number</p>';
+          return;
+        }
+
+        if (!validateAadharNumber(aadharNumber)) {
+          resultDiv.innerHTML = '<p style="color: var(--primary-color-start); font-weight: 600;">❌ Aadhar number must be exactly 12 digits</p>';
+          return;
+        }
+
+        if (!aadharFile) {
+          resultDiv.innerHTML = '<p style="color: var(--primary-color-start); font-weight: 600;">❌ Please upload Aadhar card document</p>';
+          return;
+        }
+
+        if (!validateFileFormat(aadharFile, ['jpg', 'jpeg', 'png', 'pdf'])) {
+          resultDiv.innerHTML = '<p style="color: var(--primary-color-start); font-weight: 600;">❌ Aadhar file must be JPG, JPEG, PNG, or PDF</p>';
+          return;
+        }
+
+        fd.append('idNumber', aadharNumber);
+        fd.append('document', aadharFile);
+
+      } else if (proofType === 'pan') {
+        const panNumber = document.getElementById('panNumber').value.trim();
+        const panFile = document.getElementById('panFile').files[0];
+
+        if (!panNumber) {
+          resultDiv.innerHTML = '<p style="color: var(--primary-color-start); font-weight: 600;">❌ Please enter PAN number</p>';
+          return;
+        }
+
+        if (!validatePANNumber(panNumber)) {
+          resultDiv.innerHTML = '<p style="color: var(--primary-color-start); font-weight: 600;">❌ PAN format is invalid. Format: AAAAA0000A (5 letters, 4 digits, 1 letter)</p>';
+          return;
+        }
+
+        if (!panFile) {
+          resultDiv.innerHTML = '<p style="color: var(--primary-color-start); font-weight: 600;">❌ Please upload PAN card document</p>';
+          return;
+        }
+
+        if (!validateFileFormat(panFile, ['jpg', 'jpeg', 'png', 'pdf'])) {
+          resultDiv.innerHTML = '<p style="color: var(--primary-color-start); font-weight: 600;">❌ PAN file must be JPG, JPEG, PNG, or PDF</p>';
+          return;
+        }
+
+        fd.append('idNumber', panNumber.toUpperCase());
+        fd.append('document', panFile);
+
+      } else if (proofType === 'driving_license') {
+        const dlNumber = document.getElementById('dlNumber').value.trim();
+        const dlFile = document.getElementById('dlFile').files[0];
+
+        if (!dlNumber) {
+          resultDiv.innerHTML = '<p style="color: var(--primary-color-start); font-weight: 600;">❌ Please enter Driving License number</p>';
+          return;
+        }
+
+        if (!validateDLNumber(dlNumber)) {
+          resultDiv.innerHTML = '<p style="color: var(--primary-color-start); font-weight: 600;">❌ Driving License format is invalid (alphanumeric, 1-20 characters)</p>';
+          return;
+        }
+
+        if (!dlFile) {
+          resultDiv.innerHTML = '<p style="color: var(--primary-color-start); font-weight: 600;">❌ Please upload Driving License document</p>';
+          return;
+        }
+
+        if (!validateFileFormat(dlFile, ['jpg', 'jpeg', 'png', 'pdf'])) {
+          resultDiv.innerHTML = '<p style="color: var(--primary-color-start); font-weight: 600;">❌ Driving License file must be JPG, JPEG, PNG, or PDF</p>';
+          return;
+        }
+
+        fd.append('idNumber', dlNumber.toUpperCase());
+        fd.append('document', dlFile);
+      }
+
+      // Submit verification
+      try {
+        const res = await fetch(`${API}/api/verify-user`, { 
+          method: 'POST', 
+          headers: { 'Authorization': `Bearer ${token}` }, 
+          body: fd 
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        
+        userVerified = true;
+        resultDiv.innerHTML = '<p style="color: var(--success-color); font-weight: 600;">✅ Verification submitted successfully! Your identity has been verified.</p>';
+        
+        // Refresh user data
+        await fetchUser();
+        
+        // Clear form
+        setTimeout(() => {
+          document.getElementById('verifyName').value = '';
+          document.getElementById('verifyPhone').value = '';
+          document.getElementById('idProofType').value = '';
+          document.getElementById('aadharNumber').value = '';
+          document.getElementById('aadharFile').value = '';
+          document.getElementById('panNumber').value = '';
+          document.getElementById('panFile').value = '';
+          document.getElementById('dlNumber').value = '';
+          document.getElementById('dlFile').value = '';
+          updateIdProofFields();
+          showTab('createRide');
+        }, 2000);
+      } catch (err) {
+        resultDiv.innerHTML = `<p style="color: var(--primary-color-start); font-weight: 600;">❌ Verification Error: ${err.message}</p>`;
+      }
+    }
+    
+    document.getElementById('reportForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData();
+      fd.append('issue', document.getElementById('riDesc').value);
+      fd.append('location', document.getElementById('riLoc').value);
+      const photo = document.getElementById('riPhoto').files[0];
+      if (photo) fd.append('image', photo);
+      try {
+        const res = await fetch(`${API}/api/report`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        alert('Report submitted successfully. Thank you!');
+        e.target.reset();
+      } catch (err) {
+        alert(`Report Error: ${err.message}`);
+      }
+    });
+    
+    document.getElementById('loadAdminBtn').addEventListener('click', async (e) => {
+      e.preventDefault();
+      const adminKey = document.getElementById('adminKey').value.trim();
+      try {
+        const res = await fetch(`${API}/api/admin/reports`, { headers: { 'x-admin-key': adminKey } });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        const container = document.getElementById('adminReportsList');
+        container.innerHTML = '';
+        data.reports.forEach(r => {
+          const div = document.createElement('div');
+          let content = `<span>${new Date(r.createdAt).toLocaleString()} | <strong>${r.issue}</strong><br><span class="small">Location: ${r.location}</span></span>`;
+          if (r.image) { content += `<a href="${API}/uploads/${r.image}" target="_blank" rel="noopener noreferrer">View Image</a>`; }
+          div.innerHTML = content;
+          container.appendChild(div);
+        });
+      } catch (err) {
+        alert(`Admin Error: ${err.message}`);
+      }
+    });
+    
+    let map;
+    function initMap() {
+      if (map) return;
+      if (document.getElementById('map')) {
+        map = L.map('map').setView([20.9517, 85.0985], 7);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
+      }
+    }
+  </script>
+</body>
+</html>
